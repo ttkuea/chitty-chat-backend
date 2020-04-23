@@ -1,8 +1,12 @@
+require('dotenv').config()
+
 const express = require('express');
 
 const app = express();
 app.use(require('morgan')('dev'));
 
+const connectDB = require('./connection');
+connectDB();
 
 app.get('/', (req, res) => res.send("Hello world from " + process.env.ROLE));
 
