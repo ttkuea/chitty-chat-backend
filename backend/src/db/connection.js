@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const mongoose = require('mongoose');
 
 const URI = process.env.MONGO_URI;
@@ -7,7 +9,7 @@ const connectDB = async() => {
         useUnifiedTopology: true,
         useNewUrlParser: true
     });
-    console.log('DB has been connected!');
+    console.log(`connected to ${URI}`);
 }
 
 module.exports = connectDB;
