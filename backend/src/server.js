@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const Group = require('./db/group');
 const User = require('./db/user');
+const ObjectID = require('mongodb').ObjectID;
 
 const app = express();
 app.use(require('morgan')('dev'));
@@ -61,6 +62,10 @@ app.get('/api/msg/:groupName', async(req,res) => { //getAllGroupMsg
     res.json({messages: group.messages});
 });
 
+app.get('/api/msg/:groupName/:username', async(req,res) => {
+    res.json(await getGroupMessage(req.params.groupName, req.params.username));
+});
+
 app.post('/api/send-msg/:groupName/:sender', async(req,res) => { // body{message: string}
     let payload = req.body;
     const user = await User.findOne({username:req.params.sender});
@@ -85,13 +90,17 @@ async function getAllUser() {
     return users;
 };
 
-function createUser(username, password){
+async function createUser(username, password) {
     const payload = {username, password}
     const user = new User(payload);
     await user.save();
 };
 
-async function getAllGroup(){
+async function getUsername(userId) {
+    return (await User.findOne({_id: userId})).username;
+}
+
+async function getAllGroup() {
     const groups = await Group.find();
     return groups;
 };
@@ -119,9 +128,38 @@ async function joinGroup(groupName, userName) {
     );
 };
 
-async function getGroupMessage(groupName) {
+async function getGroupMessage(groupName,userName) { // GetGroupMessage By Username -> 
+    // have async problem need to call getGroupMessage.then(fucntion(result) {//do sth}) instead
     const group = await Group.findOne({groupName: groupName});
-    res.json({messages: group.messages});
+    const groupMessages = group.messages;
+    const groupMembers = group.members;
+    const user = await User.findOne({username: userName});
+
+    let lastRead;
+    for (let member in groupMembers){
+        if (groupMembers[member].userId.equals(user._id)){
+            lastRead = group.members[member].lastRead;
+        }
+    }
+
+    await Group.updateOne(
+        {groupName: groupName, "members.userId": user._id},
+        { $set: {"members.$.lastRead": new Date()} } //set my own last read to NOW
+    );
+
+    let messages = {Read: [], Unread: []};
+    for (let message in groupMessages){
+        let msg = groupMessages[message];
+        msg.username = await getUsername(msg.sender);
+        // console.log(msg);
+        if (msg.timestamp > lastRead){
+            messages.Unread.push(msg);
+        }else{
+            messages.Read.push(msg)
+        }
+    }
+    // console.log(messages);
+    return messages;   
 };
 
 async function sendMessage(groupName, sender, message) {
@@ -147,3 +185,7 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log("Chitty chat is listening on port", port);
 })
+
+
+// const gg = getGroupMessage("group1","user1").then(function(result) {console.log("return msg", result);});  //use then instead if you use this func
+
