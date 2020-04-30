@@ -10,7 +10,7 @@ const groupSchema = new Schema({
         timestamp: Date
     }],
     members: [{
-        username: {type: Schema.Types.ObjectId, ref: 'User'},
+        userId: {type: Schema.Types.ObjectId, ref: 'User'},
         lastRead: Date,
         joinedSince: Date
     }]
