@@ -19,7 +19,7 @@ app.get('/api/user', async(req,res) => {
     const users = await User.find();
     res.json(users);
 });
-app.post('/api/register', async(req,res) => {
+app.post('/api/register', async(req,res) => { //body {username: string, password: string}
     const payload = req.body;
     const user = new User(payload);
     await user.save();
@@ -31,7 +31,7 @@ app.get('/api/group', async(req,res) => { //getAllGroups
     const groups = await Group.find();
     res.json(groups);
 });
-app.post('/api/create-group', async(req,res) => {
+app.post('/api/create-group', async(req,res) => { //body {groupName: string}
     let payload = req.body;
     payload.messages = [];
     payload.members = [];
@@ -61,7 +61,7 @@ app.get('/api/msg/:groupName', async(req,res) => { //getAllGroupMsg
     res.json({messages: group.messages});
 });
 
-app.post('/api/send-msg/:groupName/:sender', async(req,res) => {
+app.post('/api/send-msg/:groupName/:sender', async(req,res) => { // body{message: string}
     let payload = req.body;
     const user = await User.findOne({username:req.params.sender});
     payload.sender = user._id;
