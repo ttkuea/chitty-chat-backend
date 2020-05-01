@@ -257,7 +257,12 @@ io.on('connection', socket => {
     })
 
     socket.on('client_joinGroup', (req) => {
-        joinGroup(req.groupName, req.username);
+        joinGroup(req.groupName, req.username).then(() => {
+            getAllGroup().then((groups) => {
+                io.to(groupRoom).emit('server_emitGroupInfo', groups);
+            });
+        });
+
     })
 
     // socket.on('client_exitGroupInfo', (req) => {
