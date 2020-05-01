@@ -183,9 +183,9 @@ async function getGroupMessage(groupName,userName) { // GetGroupMessage By Usern
 
     let messages = {Read: [], Unread: []};
     for (let message in groupMessages){
-        let msg = groupMessages[message];
+        const msg = groupMessages[message];
         msg.username = await getUsername(msg.sender);
-        // console.log(msg);
+        console.log(msg.username);
         if (msg.timestamp > lastRead){
             messages.Unread.push(msg);
         }else{
@@ -289,7 +289,8 @@ io.on('connection', socket => {
 
     socket.on('client_enterGroup', (req) => {
         socket.join(req.groupName);
-        getGroupMessage(req.groupName, req.username).then( res => socket.emit('server_emitOnEnterGroup', res));
+        getGroupMessage(req.groupName, req.username).then( (res) => {
+            socket.emit('server_emitOnEnterGroup', res);} );
         console.log(socket.id + " in rooms: " + req.groupName);
     })
 
@@ -311,6 +312,15 @@ io.on('connection', socket => {
                 })
         });
         
+    })
+
+    socket.on('client_exitGroup', (req) => {
+        exitGroup(req.groupName, req.username);
+        socket.leave(req.groupName);
+        console.log(req.username + " permanent exit from " + req.groupName);
+        getAllGroup().then((groups) => {
+            io.to(groupRoom).emit('server_emitGroupInfo', groups);
+        });
     })
 
 
