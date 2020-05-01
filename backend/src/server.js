@@ -4,9 +4,6 @@ const Group = require('./db/group');
 const User = require('./db/user');
 const ObjectID = require('mongodb').ObjectID;
 
-const multer = require('multer');
-const upload = multer({dest: '/files/group'})
-
 const app = express();
 app.use(require('morgan')('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
