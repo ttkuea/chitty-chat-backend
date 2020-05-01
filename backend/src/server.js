@@ -305,7 +305,7 @@ io.on('connection', socket => {
     socket.on('client_sendMsg', (req) => {
         console.log(req.message + " " + req.groupName + " " + req.sender)
         sendMessage(req.groupName, req.sender, req.message).then( res => {
-            io.to(groupRoom).emit('server_emitChat',
+            io.to(req.groupName).emit('server_emitChat',
                 {
                     sender: req.sender,
                     message: req.message,
