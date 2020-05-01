@@ -207,6 +207,7 @@ async function sendMessage(groupName, sender, message) {
         }
     );
     console.log("Send msg OK");
+    return payload.timestamp;
 };
 
 async function joinGroup(groupName, username) {
@@ -260,10 +261,31 @@ io.on('connection', socket => {
         joinGroup(req.groupName, req.username).then(() => {
             getAllGroup().then((groups) => {
                 io.to(groupRoom).emit('server_emitGroupInfo', groups);
-            });
+            });   
         });
-
     })
+
+    socket.on('client_enterGroup', (req) => {
+        socket.join(req.groupName);
+        console.log(socket.id + " in rooms: " + req.groupName);
+    })
+
+    socket.on('client_leaveGroup', (req) => {
+        socket.leave(req.groupName);
+        console.log(socket.id + " in rooms: " + req.groupName);
+    })
+
+    socket.on('client_sendMsg', (req) => {
+        console.log(req.message + " " + req.groupName + " " + req.sender)
+        const timestamp = sendMessage(req.groupName, req.sender, req.message);
+        io.to(groupRoom).emit('server_emitChat', 
+            {sender: req.sender, 
+             message: req.message,
+             timestamp: req.timestamp
+            })
+    })
+
+
 
     // socket.on('client_exitGroupInfo', (req) => {
     //     console.log('socket exit groupInfo: ', socket.id);
