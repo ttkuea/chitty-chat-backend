@@ -48,15 +48,11 @@ app.get('/api/:groupName', async(req,res) => { //getGroupByGroupName
     const group = await Group.findOne({groupName: req.params.groupName});
     res.json(group);
 });
+
+
+
 app.get('/api/join-group/:groupName/:user', async(req,res) => {
-    const user = await User.findOne({username:req.params.user});
-    console.log(user);
-    let payload = { userId: user._id, lastRead: new Date("1970-01-01T00:00:00Z"), joinedSince: new Date()};
-    console.log(payload);
-    await Group.update(
-        {groupName: req.params.groupName},
-        {$push: {members: payload}}
-    );
+    joinGroup(req.params.groupName, req.params.user);
     res.status(201).send({message:"join group OK"}).end();
 });
 
@@ -183,6 +179,17 @@ async function sendMessage(groupName, sender, message) {
     console.log("Send msg OK");
 };
 
+async function joinGroup(groupName, username) {
+    const user = await User.findOne({ username: username });
+    console.log(user);
+    let payload = { userId: user._id, lastRead: new Date("1970-01-01T00:00:00Z"), joinedSince: new Date() };
+    console.log(payload);
+    await Group.update(
+        { groupName: groupName },
+        { $push: { members: payload } }
+    );
+}
+
 //-----------------
 
 
@@ -199,14 +206,13 @@ var io = require('socket.io').listen(server);
 io.on('connection', socket => {
     console.log('socket connect: ', socket.id)
     
-    socket.on('client_init', (res) => {
-        if (res && res.role == 'g') {
-            getAllGroup().then((groups) => {
-                socket.emit('server_emitGroups',groups)
-            });
-            
-            socket.join(groupRoom);
-        }
+    socket.on('client_getGroupInfo', (res) => {
+        getAllGroup().then((groups) => {
+            socket.emit('server_emitGroupInfo',groups)
+        });
+        
+        socket.join(groupRoom);
+        
     })
 
     socket.on('client_createGroup', (req) => {
@@ -214,7 +220,18 @@ io.on('connection', socket => {
         if (req) {
             createGroup(req.groupName);
         }
-        io.to(groupRoom).emit('server_emit_groups', groups);
+        getAllGroup().then((groups) => {
+            io.to(groupRoom).emit('server_emitGroupInfo', groups);
+        });
+        
     })
+
+    socket.on('client_joinGroup', (req) => {
+        joinGroup(req.groupName, req.username);
+    })
+
+    // socket.on('client_exitGroupInfo', (req) => {
+    //     console.log('socket exit groupInfo: ', socket.id);
+    // })
     
 });
