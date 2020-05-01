@@ -4,6 +4,9 @@ const Group = require('./db/group');
 const User = require('./db/user');
 const ObjectID = require('mongodb').ObjectID;
 
+const multer = require('multer');
+const upload = multer({dest: '/files/group'})
+
 const app = express();
 app.use(require('morgan')('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -20,15 +23,36 @@ app.get('/', (req, res) => res.send("Hello world from " + process.env.ROLE));
 app.get('/flap', (req, res) => {io.sockets.emit('login response', 'borad castttt'), res.send('fuck')})
 
 //User APIs
-app.get('/api/user', async(req,res) => {
+app.get('/api/all-user', async(req,res) => {
     const users = await User.find();
     res.json(users);
 });
 app.post('/api/register', async(req,res) => { //body {username: string, password: string}
-    const payload = req.body;
-    const user = new User(payload);
-    await user.save();
-    res.status(201).send({message:"Register OK"}).end();
+    const queryuser = await User.findOne({username: req.body.username});
+    if (queryuser == null){
+        const payload = req.body;
+        const user = new User(payload);
+        await user.save();
+        res.status(201).send({message: "Register OK"}).end();
+    } else {
+        res.status(400).send({message: "Invalid username"}).end();
+    }
+
+
+});
+
+app.post('/api/login', async(req,res) => { //body {username: string, password: string}
+    const user = await User.findOne({username: req.body.username});
+    console.log(user);
+    if (user != null){
+        if (user.password === req.body.password){
+            res.status(200).send({message: "Login Success"}).end();
+        } else {
+            res.status(400).send({message: "Invalid username or password"}).end();
+        }
+    } else {
+        res.status(400).send({message: "Invalid username or password"}).end();
+    }
 });
 
 //Group APIs
