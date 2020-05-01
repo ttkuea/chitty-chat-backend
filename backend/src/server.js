@@ -52,7 +52,7 @@ app.post('/api/login', async(req,res) => { //body {username: string, password: s
     console.log(user);
     if (user != null){
         if (user.password === req.body.password){
-            res.status(200).send({message: "Login Success"}).end();
+            res.status(200).send({message: "Login Success", user}).end();
         } else {
             res.status(400).send({message: "Invalid username or password"}).end();
         }
