@@ -12,8 +12,12 @@ app.use(bodyParser.json());
 const connectDB = require('./db/connection');
 connectDB();
 
+//SOCKET
+const groupRoom = 'g_broadcast_room';
+
 //TEST API---------
 app.get('/', (req, res) => res.send("Hello world from " + process.env.ROLE));
+app.get('/flap', (req, res) => {io.sockets.emit('login response', 'borad castttt'), res.send('fuck')})
 
 //User APIs
 app.get('/api/user', async(req,res) => {
@@ -80,6 +84,7 @@ app.post('/api/send-msg/:groupName/:sender', async(req,res) => { // body{message
         }
     );
     res.status(201).send({message:"send message OK"}).end();
+    io.emit()
 });
 
 //-----------------
@@ -186,11 +191,30 @@ const server = app.listen(port, () => {
     console.log("Chitty chat is listening on port", port);
 })
 
-
 // const gg = getGroupMessage("group1","user1").then(function(result) {console.log("return msg", result);});  //use then instead if you use this func
+
 
 //----------------- SOCKET
 var io = require('socket.io').listen(server);
-io.sockets.on('connection', (socket) => {
-    console.log(socket.id)
+io.on('connection', socket => {
+    console.log('socket connect: ', socket.id)
+    
+    socket.on('client_init', (res) => {
+        if (res && res.role == 'g') {
+            getAllGroup().then((groups) => {
+                socket.emit('server_emitGroups',groups)
+            });
+            
+            socket.join(groupRoom);
+        }
+    })
+
+    socket.on('client_createGroup', (req) => {
+        
+        if (req) {
+            createGroup(req.groupName);
+        }
+        io.to(groupRoom).emit('server_emit_groups', groups);
+    })
+    
 });
