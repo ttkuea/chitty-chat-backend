@@ -183,16 +183,17 @@ async function getGroupMessage(groupName,userName) { // GetGroupMessage By Usern
 
     let messages = {Read: [], Unread: []};
     for (let message in groupMessages){
-        const msg = groupMessages[message];
-        msg.username = await getUsername(msg.sender);
-        console.log(msg.username);
+        const msg = groupMessages[message].toObject();
+        let username = await getUsername(msg.sender);
+        msg.sender = username; // frontend don't use username instead of objectId
+
         if (msg.timestamp > lastRead){
             messages.Unread.push(msg);
         }else{
             messages.Read.push(msg)
         }
     }
-    // console.log(messages);
+    console.log(messages);
     return messages;   
 };
 
