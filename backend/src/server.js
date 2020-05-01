@@ -52,7 +52,7 @@ app.post('/api/login', async(req,res) => { //body {username: string, password: s
     console.log(user);
     if (user != null){
         if (user.password === req.body.password){
-            res.status(200).send({message: "Login Success"}).end();
+            res.status(200).send({message: "Login Success", user}).end();
         } else {
             res.status(400).send({message: "Invalid username or password"}).end();
         }
@@ -79,12 +79,16 @@ app.get('/api/:groupName', async(req,res) => { //getGroupByGroupName
     res.json(group);
 });
 
-
-
 app.get('/api/join-group/:groupName/:user', async(req,res) => {
     joinGroup(req.params.groupName, req.params.user);
     res.status(201).send({message:"join group OK"}).end();
 });
+
+app.get('/api/exit-group/:groupName/:username', async(req,res) => {
+    // console.log(req.params.groupName, req.params.username);
+    await exitGroup(req.params.groupName, req.params.username);
+    res.status(200).send({message:"exit group OK"}).end();
+})
 
 //Message APIs
 app.get('/api/msg/:groupName', async(req,res) => { //getAllGroupMsg
@@ -210,15 +214,25 @@ async function sendMessage(groupName, sender, message) {
     return payload.timestamp;
 };
 
-async function joinGroup(groupName, username) {
-    const user = await User.findOne({ username: username });
-    console.log(user);
-    let payload = { userId: user._id, lastRead: new Date("1970-01-01T00:00:00Z"), joinedSince: new Date() };
-    console.log(payload);
+// async function joinGroup(groupName, username) {
+//     const user = await User.findOne({ username: username });
+//     console.log(user);
+//     let payload = { userId: user._id, lastRead: new Date("1970-01-01T00:00:00Z"), joinedSince: new Date() };
+//     console.log(payload);
+//     await Group.update(
+//         { groupName: groupName },
+//         { $push: { members: payload } }
+//     );
+// }
+
+async function exitGroup(groupName, username){
+    const user = await User.findOne({username});
+    console.log(user._id);
     await Group.update(
-        { groupName: groupName },
-        { $push: { members: payload } }
+        {groupName: groupName},
+        {$pull: { members: {userId: user._id}}}
     );
+    console.log("exit group OK");
 }
 
 //-----------------
