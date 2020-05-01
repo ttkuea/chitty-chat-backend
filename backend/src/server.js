@@ -114,7 +114,6 @@ app.post('/api/send-msg/:groupName/:sender', async(req,res) => { // body{message
         }
     );
     res.status(201).send({message:"send message OK"}).end();
-    io.emit()
 });
 
 //-----------------
@@ -197,6 +196,15 @@ async function getGroupMessage(groupName,userName) { // GetGroupMessage By Usern
     return messages;   
 };
 
+async function updateMyLastRead(groupName, username) {
+    const group = await Group.findOne({ groupName: groupName }); //UNTEST
+    const user = await User.findOne({ username: username });
+    await Group.updateOne(
+        { groupName: groupName, "members.userId": user._id },
+        { $set: { "members.$.lastRead": new Date() } } //set my own last read to NOW
+    );
+}
+
 async function sendMessage(groupName, sender, message) {
     let payload = {message};
     const user = await User.findOne({username: sender});
@@ -211,7 +219,7 @@ async function sendMessage(groupName, sender, message) {
         }
     );
     console.log("Send msg OK");
-    return payload.timestamp;
+    return +new Date;
 };
 
 // async function joinGroup(groupName, username) {
@@ -281,22 +289,28 @@ io.on('connection', socket => {
 
     socket.on('client_enterGroup', (req) => {
         socket.join(req.groupName);
+        getGroupMessage(req.groupName, req.username).then( res => socket.emit('server_emitOnEnterGroup', res));
         console.log(socket.id + " in rooms: " + req.groupName);
     })
 
     socket.on('client_leaveGroup', (req) => {
+        
         socket.leave(req.groupName);
-        console.log(socket.id + " in rooms: " + req.groupName);
+        updateMyLastRead(req.groupName, req.username)
+        console.log(socket.id + " out rooms: " + req.groupName);
     })
 
     socket.on('client_sendMsg', (req) => {
         console.log(req.message + " " + req.groupName + " " + req.sender)
-        const timestamp = sendMessage(req.groupName, req.sender, req.message);
-        io.to(groupRoom).emit('server_emitChat', 
-            {sender: req.sender, 
-             message: req.message,
-             timestamp: req.timestamp
-            })
+        sendMessage(req.groupName, req.sender, req.message).then( res => {
+            io.to(groupRoom).emit('server_emitChat',
+                {
+                    sender: req.sender,
+                    message: req.message,
+                    timestamp: res
+                })
+        });
+        
     })
 
 
