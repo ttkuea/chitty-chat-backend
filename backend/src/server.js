@@ -130,8 +130,11 @@ async function createUser(username, password) {
     await user.save();
 };
 
+const usernameMemo = {};
+
 async function getUsername(userId) {
-    return (await User.findOne({_id: userId})).username;
+    if (userId in usernameMemo) return usernameMemo[userId];
+    return usernameMemo[userId] = (await User.findOne({_id: userId})).username;
 }
 
 async function getAllGroup() {
