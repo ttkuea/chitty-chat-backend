@@ -182,10 +182,15 @@ async function sendMessage(groupName, sender, message) {
 
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log("Chitty chat is listening on port", port);
 })
 
 
 // const gg = getGroupMessage("group1","user1").then(function(result) {console.log("return msg", result);});  //use then instead if you use this func
 
+//----------------- SOCKET
+var io = require('socket.io').listen(server);
+io.sockets.on('connection', (socket) => {
+    console.log(socket.id)
+});
